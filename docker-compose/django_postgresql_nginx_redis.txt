@@ -1,0 +1,48 @@
+webapp:
+#  restart: always
+  image: vinhntb/webapp:latest
+  ports:
+    - "808:8088"
+  container_name: kcs_webapp
+  links:
+    - postgres:postgresdb
+    - redis:redisio
+  env_file: env_docker
+  volumes:
+    - ./webapp:/data/webapp/
+  command: bash runserver.sh
+
+nginx:
+  # restart: always
+  build: ./nginx/
+  container_name: kcs_nginx
+  ports:
+    - "8088:808"
+#  volumes:
+#    - /data/webapp/static/
+  volumes_from:
+    - webapp
+  links:
+    - webapp:webapp
+
+postgres:
+  # restart: always
+  image: postgres:9.6
+  container_name: kcs_postgres
+  volumes:
+    - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    - ./postgres/backups:/home
+    - ./webapp/backups:/opt
+
+  env_file:
+    - env_docker
+  ports:
+    - "5432:5432"
+
+redis:
+  # restart: always
+  image: redis:latest
+  container_name: kcs_redis
+  expose:
+    - "6379"
+
